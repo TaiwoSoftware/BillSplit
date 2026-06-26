@@ -1,0 +1,175 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+
+import Navbar from "@/app/components/layout/Navbar";
+import Sidebar from "@/app/components/layout/Sidebar";
+import StatCard from "@/app/dashboard/StatCard";
+import BillCard from "@/app/bills/BillCard";
+import Button from "@/app/components/ui/Button";
+
+import {
+  Wallet,
+  Receipt,
+  Users,
+  TrendingUp,
+  Plus,
+  Menu,
+  X,
+} from "lucide-react";
+
+export default function DashboardPage() {
+  const [isSidebarOpen, setIsSidebarOpen] =
+    useState(false);
+
+  const bills = [
+    {
+      id: "1",
+      title: "Birthday Dinner",
+      collected: 25000,
+      target: 30000,
+    },
+    {
+      id: "2",
+      title: "Department Project",
+      collected: 80000,
+      target: 100000,
+    },
+  ];
+
+  return (
+    <>
+      <Navbar />
+
+      <div className="relative flex min-h-[calc(100vh-80px)] bg-slate-50">
+        {/* Mobile Hamburger */}
+        <button
+          onClick={() =>
+            setIsSidebarOpen(!isSidebarOpen)
+          }
+          className="
+            fixed
+            left-4
+            top-24
+            z-50
+            rounded-xl
+            border
+            border-slate-200
+            bg-white
+            p-3
+            shadow-lg
+            lg:hidden
+          "
+        >
+          {isSidebarOpen ? (
+            <X size={22} />
+          ) : (
+            <Menu size={22} />
+          )}
+        </button>
+
+        {/* Overlay */}
+        {isSidebarOpen && (
+          <div
+            onClick={() =>
+              setIsSidebarOpen(false)
+            }
+            className="
+              fixed
+              inset-0
+              z-40
+              bg-black/40
+              lg:hidden
+            "
+          />
+        )}
+
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() =>
+            setIsSidebarOpen(false)
+          }
+        />
+
+        <main className="flex-1 p-6 md:p-10">
+          {/* Header */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-4xl font-bold">
+                Dashboard 👋
+              </h1>
+
+              <p className="mt-2 text-slate-500">
+                Manage your bills and track
+                contributions.
+              </p>
+            </div>
+
+            <Link href="/bills/create">
+              <Button>
+                <Plus size={20} />
+                Create Bill
+              </Button>
+            </Link>
+          </div>
+
+          {/* Stats */}
+          <section className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              title="Total Collected"
+              value="₦105,000"
+              icon={<Wallet size={28} />}
+            />
+
+            <StatCard
+              title="Active Bills"
+              value="2"
+              icon={<Receipt size={28} />}
+            />
+
+            <StatCard
+              title="Contributors"
+              value="15"
+              icon={<Users size={28} />}
+            />
+
+            <StatCard
+              title="Completion Rate"
+              value="81%"
+              icon={<TrendingUp size={28} />}
+            />
+          </section>
+
+          {/* Recent Bills */}
+          <section className="mt-14">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">
+                Recent Bills
+              </h2>
+
+              <Link
+                href="/bills"
+                className="font-medium text-blue-600 hover:text-blue-700"
+              >
+                View All
+              </Link>
+            </div>
+
+            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+              {bills.map((bill) => (
+                <BillCard
+                  key={bill.id}
+                  id={bill.id}
+                  title={bill.title}
+                  collected={bill.collected}
+                  target={bill.target}
+                />
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
+    </>
+  );
+}
