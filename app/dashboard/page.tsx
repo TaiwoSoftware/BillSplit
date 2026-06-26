@@ -43,32 +43,6 @@ export default function DashboardPage() {
       <Navbar />
 
       <div className="relative flex min-h-[calc(100vh-80px)] bg-slate-50">
-        {/* Mobile Hamburger */}
-        <button
-          onClick={() =>
-            setIsSidebarOpen(!isSidebarOpen)
-          }
-          className="
-            fixed
-            left-4
-            top-24
-            z-50
-            rounded-xl
-            border
-            border-slate-200
-            bg-white
-            p-3
-            shadow-lg
-            lg:hidden
-          "
-        >
-          {isSidebarOpen ? (
-            <X size={22} />
-          ) : (
-            <Menu size={22} />
-          )}
-        </button>
-
         {/* Overlay */}
         {isSidebarOpen && (
           <div
@@ -76,12 +50,9 @@ export default function DashboardPage() {
               setIsSidebarOpen(false)
             }
             className="
-              fixed
-              inset-0
-              z-40
-              bg-black/40
-              lg:hidden
-            "
+          fixed inset-0 z-40
+          bg-black/40 lg:hidden
+        "
           />
         )}
 
@@ -95,15 +66,41 @@ export default function DashboardPage() {
         <main className="flex-1 p-6 md:p-10">
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-4xl font-bold">
-                Dashboard 👋
-              </h1>
+            <div className="flex items-start gap-4">
+              {/* Only Hamburger */}
+              <button
+                onClick={() =>
+                  setIsSidebarOpen(
+                    (prev) => !prev
+                  )
+                }
+                className="
+              rounded-xl
+              border
+              border-slate-200
+              bg-white
+              p-3
+              shadow-sm
+              lg:hidden
+            "
+              >
+                {isSidebarOpen ? (
+                  <X size={22} />
+                ) : (
+                  <Menu size={22} />
+                )}
+              </button>
 
-              <p className="mt-2 text-slate-500">
-                Manage your bills and track
-                contributions.
-              </p>
+              <div>
+                <h1 className="text-3xl font-bold md:text-4xl">
+                  Dashboard 👋
+                </h1>
+
+                <p className="mt-1 text-slate-500">
+                  Manage your bills and track
+                  contributions.
+                </p>
+              </div>
             </div>
 
             <Link href="/bills/create">
