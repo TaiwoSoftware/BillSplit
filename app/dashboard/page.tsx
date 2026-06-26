@@ -50,12 +50,15 @@ export default function DashboardPage() {
               setIsSidebarOpen(false)
             }
             className="
-          fixed inset-0 z-40
-          bg-black/40 lg:hidden
-        "
+              fixed inset-0 z-40
+              bg-black/40
+              backdrop-blur-sm
+              lg:hidden
+            "
           />
         )}
 
+        {/* Sidebar */}
         <Sidebar
           isOpen={isSidebarOpen}
           onClose={() =>
@@ -63,11 +66,12 @@ export default function DashboardPage() {
           }
         />
 
-        <main className="flex-1 p-6 md:p-10">
+        {/* Main Content */}
+        <main className="flex-1 overflow-x-hidden p-5 md:p-8 lg:p-10">
           {/* Header */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            {/* Left */}
             <div className="flex items-start gap-4">
-              {/* Only Hamburger */}
               <button
                 onClick={() =>
                   setIsSidebarOpen(
@@ -75,14 +79,16 @@ export default function DashboardPage() {
                   )
                 }
                 className="
-              rounded-xl
-              border
-              border-slate-200
-              bg-white
-              p-3
-              shadow-sm
-              lg:hidden
-            "
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white
+                  p-3
+                  shadow-sm
+                  transition
+                  hover:bg-slate-100
+                  lg:hidden
+                "
               >
                 {isSidebarOpen ? (
                   <X size={22} />
@@ -96,15 +102,19 @@ export default function DashboardPage() {
                   Dashboard 👋
                 </h1>
 
-                <p className="mt-1 text-slate-500">
+                <p className="mt-2 text-sm text-slate-500 md:text-base">
                   Manage your bills and track
                   contributions.
                 </p>
               </div>
             </div>
 
-            <Link href="/bills/create">
-              <Button>
+            {/* Right */}
+            <Link
+              href="/bills/create"
+              className="w-full md:w-auto"
+            >
+              <Button className="w-full md:w-auto">
                 <Plus size={20} />
                 Create Bill
               </Button>
@@ -147,7 +157,12 @@ export default function DashboardPage() {
 
               <Link
                 href="/bills"
-                className="font-medium text-blue-600 hover:text-blue-700"
+                className="
+                  font-medium
+                  text-blue-600
+                  transition
+                  hover:text-blue-700
+                "
               >
                 View All
               </Link>
