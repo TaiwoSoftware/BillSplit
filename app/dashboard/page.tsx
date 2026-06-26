@@ -43,7 +43,7 @@ export default function DashboardPage() {
       <Navbar />
 
       <div className="relative flex min-h-[calc(100vh-80px)] bg-slate-50">
-        {/* Overlay */}
+        {/* Mobile Overlay */}
         {isSidebarOpen && (
           <div
             onClick={() =>
@@ -70,7 +70,7 @@ export default function DashboardPage() {
         <main className="flex-1 overflow-x-hidden p-5 md:p-8 lg:p-10">
           {/* Header */}
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            {/* Left */}
+            {/* Left Section */}
             <div className="flex items-start gap-4">
               <button
                 onClick={() =>
@@ -79,6 +79,7 @@ export default function DashboardPage() {
                   )
                 }
                 className="
+                  shrink-0
                   rounded-xl
                   border
                   border-slate-200
@@ -97,28 +98,27 @@ export default function DashboardPage() {
                 )}
               </button>
 
-              <div>
+              <div className="space-y-2">
                 <h1 className="text-3xl font-bold md:text-4xl">
                   Dashboard 👋
                 </h1>
 
-                <p className="mt-2 text-sm text-slate-500 md:text-base">
+                <p className="text-sm text-slate-500 md:text-base">
                   Manage your bills and track
                   contributions.
                 </p>
               </div>
             </div>
 
-            {/* Right */}
-            <Link
-              href="/bills/create"
-              className="w-full md:w-auto"
-            >
-              <Button className="w-full md:w-auto">
-                <Plus size={20} />
-                Create Bill
-              </Button>
-            </Link>
+            {/* Right Section */}
+            <div className="w-full sm:w-auto">
+              <Link href="/bills/create">
+                <Button className="w-full sm:w-auto">
+                  <Plus size={20} />
+                  <span>Create Bill</span>
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Stats */}
