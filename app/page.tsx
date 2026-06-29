@@ -4,6 +4,7 @@ import Badge from "@/app/components/ui/Badge";
 import Button from "@/app/components/ui/Button";
 import Card from "@/app/components/ui/Card";
 import Progress from "@/app/components/ui/Progress";
+import TestConnection from "./components/TestConnection";
 
 export default function Home() {
   const features = [
@@ -73,6 +74,7 @@ export default function Home() {
           </div>
         </nav>
       </header>
+      <TestConnection />
 
       {/* Hero Section */}
       <section className="mx-auto grid max-w-7xl gap-16 px-6 py-24 lg:grid-cols-2 lg:items-center">

@@ -17,9 +17,11 @@ export default function Navbar() {
             <Bell size={22} />
           </button>
 
+          <Link href={"/profile"}>
           <button>
             <UserCircle size={32} />
           </button>
+          </Link>
         </div>
       </nav>
     </header>

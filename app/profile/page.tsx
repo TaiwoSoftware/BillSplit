@@ -44,7 +44,7 @@ export default function ProfilePage() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-x-hidden p-5 md:p-8 lg:p-10">
-            <Sidebar />
+        
           <ProfileHeader />
 
           <AccountStatistics />

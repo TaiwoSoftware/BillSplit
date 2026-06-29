@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-
 import Navbar from "@/app/components/layout/Navbar";
 import Sidebar from "@/app/components/layout/Sidebar";
 import Input from "@/app/components/ui/Input";
 import Button from "@/app/components/ui/Button";
-
 import {
   Calendar,
   Plus,
@@ -15,6 +13,10 @@ import {
   Landmark,
   Menu,
   X,
+  Copy,
+  Check,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
 
 export default function CreateBillPage() {
@@ -58,6 +60,13 @@ export default function CreateBillPage() {
       },
     ]);
   };
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const [billLink, setBillLink] = useState("");
+
+  const [billId, setBillId] = useState("");
+
+  const [copied, setCopied] = useState(false);
 
   const updateParticipant = (
     id: string,
@@ -68,9 +77,9 @@ export default function CreateBillPage() {
       prev.map((participant) =>
         participant.id === id
           ? {
-              ...participant,
-              [field]: value,
-            }
+            ...participant,
+            [field]: value,
+          }
           : participant
       )
     );
@@ -128,7 +137,15 @@ export default function CreateBillPage() {
   const handleSubmit = () => {
     if (!validate()) return;
 
+    const id =
+      "BILL-" +
+      Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase();
+
     const payload = {
+      id,
       title,
       description,
       amount,
@@ -140,7 +157,36 @@ export default function CreateBillPage() {
 
     console.log(payload);
 
-    alert("Bill created successfully 🎉");
+    setBillId(id);
+
+    const link =
+      `${window.location.origin}/pay/${id}`;
+
+    setBillLink(link);
+
+    setShowSuccessModal(true);
+  };
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(
+      billLink
+    );
+
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
+  const shareLink = async () => {
+    if (navigator.share) {
+      await navigator.share({
+        title,
+        text: `Contribute to ${title}`,
+        url: billLink,
+      });
+    } else {
+      copyLink();
+    }
   };
 
   const completedFields = [
@@ -443,14 +489,14 @@ export default function CreateBillPage() {
                       {errors[
                         `name-${index}`
                       ] && (
-                        <p className="text-sm text-red-500">
-                          {
-                            errors[
+                          <p className="text-sm text-red-500">
+                            {
+                              errors[
                               `name-${index}`
-                            ]
-                          }
-                        </p>
-                      )}
+                              ]
+                            }
+                          </p>
+                        )}
 
                       <Input
                         placeholder="Email"
@@ -469,14 +515,14 @@ export default function CreateBillPage() {
                       {errors[
                         `email-${index}`
                       ] && (
-                        <p className="text-sm text-red-500">
-                          {
-                            errors[
+                          <p className="text-sm text-red-500">
+                            {
+                              errors[
                               `email-${index}`
-                            ]
-                          }
-                        </p>
-                      )}
+                              ]
+                            }
+                          </p>
+                        )}
                     </div>
                   )
                 )}
@@ -559,6 +605,134 @@ export default function CreateBillPage() {
               </Button>
             </div>
           </div>
+          {
+            showSuccessModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5">
+                <div className="w-full max-w-xl rounded-3xl bg-white p-8 shadow-2xl">
+
+                  <div className="text-center">
+
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+
+                      <Check
+                        size={42}
+                        className="text-green-600"
+                      />
+
+                    </div>
+
+                    <h2 className="mt-6 text-3xl font-bold">
+                      Bill Created 🎉
+                    </h2>
+
+                    <p className="mt-3 text-slate-500">
+                      Your bill has been created successfully.
+                    </p>
+
+                  </div>
+
+                  <div className="mt-8 space-y-4 rounded-2xl bg-slate-50 p-6">
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">
+                        Bill
+                      </span>
+
+                      <span className="font-semibold">
+                        {title}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">
+                        Bill ID
+                      </span>
+
+                      <span className="font-semibold">
+                        {billId}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">
+                        Amount
+                      </span>
+
+                      <span className="font-semibold">
+                        ₦{amount}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">
+                        Participants
+                      </span>
+
+                      <span className="font-semibold">
+                        {participants.length}
+                      </span>
+                    </div>
+
+                  </div>
+
+                  <div className="mt-8">
+
+                    <label className="mb-2 block font-semibold">
+                      Share Link
+                    </label>
+
+                    <div className="flex overflow-hidden rounded-xl border">
+
+                      <input
+                        readOnly
+                        value={billLink}
+                        className="flex-1 px-4 py-3 outline-none"
+                      />
+
+                      <button
+                        onClick={copyLink}
+                        className="bg-blue-600 px-5 text-white hover:bg-blue-700"
+                      >
+                        {copied ? (
+                          <Check size={18} />
+                        ) : (
+                          <Copy size={18} />
+                        )}
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                  <div className="mt-8 grid gap-3">
+
+                    <Button
+                      onClick={shareLink}
+                    >
+                      <Share2 size={18} />
+                      Share Link
+                    </Button>
+
+                    <Link href={`/bills/${billId}`}>
+                      <Button variant="outline" className="w-full">
+                        <ExternalLink size={18} />
+                        View Bill
+                      </Button>
+                    </Link>
+
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowSuccessModal(false)}
+                    >
+                      Close
+                    </Button>
+
+                  </div>
+
+                </div>
+              </div>
+            )
+          }
         </main>
       </div>
     </>
