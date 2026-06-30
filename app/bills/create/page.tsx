@@ -1,5 +1,5 @@
 "use client";
-
+import { supabase } from "@/app/lib/supabase";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/app/components/layout/Navbar";
@@ -134,37 +134,76 @@ export default function CreateBillPage() {
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
 
-    const id =
-      "BILL-" +
-      Math.random()
-        .toString(36)
-        .substring(2, 8)
-        .toUpperCase();
+    try {
+      // Logged in user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    const payload = {
-      id,
-      title,
-      description,
-      amount,
-      dueDate,
-      splitType,
-      paymentMethods,
-      participants,
-    };
+      if (userError || !user) {
+        alert("You must be logged in.");
+        return;
+      }
 
-    console.log(payload);
+      // Create Bill
+      const { data: bill, error: billError } = await supabase
+        .from("bills")
+        .insert({
+          owner_id: user.id,
+          title,
+          description,
+          amount: Number(amount),
+          due_date: dueDate,
+          split_type: splitType,
+          allow_card: paymentMethods.card,
+          allow_bank: paymentMethods.bank,
+        })
+        .select()
+        .single();
 
-    setBillId(id);
+      if (billError) {
+        console.error(billError);
+        alert(billError.message);
+        return;
+      }
 
-    const link =
-      `${window.location.origin}/pay/${id}`;
+      // Save Participants
+      const participantData = participants.map((person) => ({
+        bill_id: bill.id,
+        name: person.name,
+        email: person.email,
+        amount:
+          splitType === "equal"
+            ? Number(amount) / participants.length
+            : null,
+      }));
 
-    setBillLink(link);
+      const { error: participantError } = await supabase
+        .from("bill_participants")
+        .insert(participantData);
 
-    setShowSuccessModal(true);
+      if (participantError) {
+        console.error(participantError);
+        alert(participantError.message);
+        return;
+      }
+
+      // Success
+      setBillId(bill.id);
+
+      const link = `${window.location.origin}/pay/${bill.id}`;
+
+      setBillLink(link);
+
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong.");
+    }
   };
   const copyLink = async () => {
     await navigator.clipboard.writeText(
