@@ -1,6 +1,6 @@
 "use client";
-
-import { useState, useRef } from "react";
+import { supabase } from "@/app/lib/supabase";
+import { useState, useRef, useEffect } from "react";
 import Button from "@/app/components/ui/Button";
 import {
     Camera,
@@ -11,24 +11,42 @@ import {
     Pencil,
     X,
 } from "lucide-react";
-
+type Profile = {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string;
+    avatar_url: string;
+    country: string;
+    occupation: string;
+    account_type: string;
+    onboard: string;
+    created_at: string;
+};
 export default function ProfileHeader() {
     const [isEditing, setIsEditing] = useState(false);
 
     const [profile, setProfile] = useState({
-        name: "Taiwo David",
-        role: "Frontend Developer",
-        email: "taiwo@gmail.com",
-        phone: "+234 916 285 5174",
-        location: "Lagos, Nigeria",
-        joined: "June 2026",
+        name: "",
+        role: "",
+        email: "",
+        phone: "",
+        location: "",
+        joined: "",
         verified: true,
-        avatar:
-            "https://ui-avatars.com/api/?name=Taiwo+David&background=2563eb&color=fff&size=256",
+        avatar: "",
     });
 
-    const [formData, setFormData] = useState(profile);
+    const [formData, setFormData] = useState({
+        name: "",
+        role: "",
+        email: "",
+        phone: "",
+        location: "",
+        avatar: "",
+    });
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [loading, setLoading] = useState(true);
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement>
     ) => {
@@ -59,10 +77,92 @@ export default function ProfileHeader() {
             avatar: imageUrl,
         }));
     };
+    const fetchProfile = async () => {
+        setLoading(true);
 
-    const saveProfile = () => {
-        setProfile(formData);
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+            setLoading(false);
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+        if (error) {
+            console.error(error);
+            setLoading(false);
+            return;
+        }
+        console.log("User:", user);
+        console.log("Profile Data:", data);
+        const profileData = {
+            name: data.full_name || "",
+            role: data.occupation || "",
+            email: data.email || user.email || "",
+            phone: data.phone || "",
+            location: data.country || "",
+            joined: data.created_at
+                ? new Date(data.created_at).toLocaleDateString("en-US", {
+                    month: "long",
+                    year: "numeric",
+                })
+                : "",
+            verified: true,
+            avatar:
+                data.avatar_url ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    data.full_name || "User"
+                )}&background=2563eb&color=fff`,
+        };
+
+        setProfile(profileData);
+        setFormData(profileData);
+
+        setLoading(false);
+    };
+    const saveProfile = async () => {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+            alert("You are not logged in.");
+            return;
+        }
+
+        const { error } = await supabase
+            .from("profiles")
+            .update({
+                full_name: formData.name,
+                phone: formData.phone,
+                country: formData.location,
+                occupation: formData.role,
+                avatar_url: formData.avatar,
+            })
+            .eq("id", user.id);
+
+        if (error) {
+            console.error(error);
+            alert("Failed to update profile.");
+            return;
+        }
+
+        // Update the UI immediately
+        setProfile((prev) => ({
+            ...prev,
+            ...formData,
+        }));
+
         setIsEditing(false);
+
+        alert("Profile updated successfully!");
     };
 
     const shareProfile = async () => {
@@ -76,7 +176,18 @@ export default function ProfileHeader() {
             alert("Unable to copy profile link.");
         }
     };
-
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+    if (loading) {
+        return (
+            <div className="flex h-80 items-center justify-center">
+                <p className="text-slate-500">
+                    Loading profile...
+                </p>
+            </div>
+        );
+    }
     return (
         <>
             <section className="rounded-3xl bg-white p-8 shadow-sm">
