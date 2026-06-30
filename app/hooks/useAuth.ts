@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { supabase } from "@/app/lib/supabase";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
 
 interface FormData {
   fullName: string;
@@ -12,23 +12,42 @@ interface FormData {
   agree: boolean;
 }
 
+interface SubmitResult {
+  success: boolean;
+  user?: any;
+}
+
 interface UseAuthReturn {
   formData: FormData;
   errors: Record<string, string>;
   loading: boolean;
   authError: string;
   retryCount: number;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
+
+  handleChange: (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => void;
+
+  handleSubmit: (
+
+    e: React.FormEvent
+  ) => Promise<SubmitResult>;
+
   handleRetry: () => void;
-  setAuthError: (error: string) => void;
-  setLoading: (loading: boolean) => void;
-  setRetryCount: (count: number) => void;
-  setFormData: (data: FormData) => void;
+
+  setAuthError: (value: string) => void;
+  setLoading: (value: boolean) => void;
+  setRetryCount: (
+    value: number | ((prev: number) => number)
+  ) => void;
+  setFormData: React.Dispatch<
+    React.SetStateAction<FormData>
+  >;
 }
 
 export function useAuth(): UseAuthReturn {
   const router = useRouter();
+
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     email: "",
@@ -36,11 +55,11 @@ export function useAuth(): UseAuthReturn {
     confirmPassword: "",
     agree: false,
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const validate = useCallback(() => {
     const newErrors: Record<string, string> = {};
@@ -52,174 +71,138 @@ export function useAuth(): UseAuthReturn {
     if (!formData.email.trim()) {
       newErrors.email = "Email is required.";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address.";
+      newErrors.email = "Enter a valid email address.";
     }
 
-    if (!formData.password.trim()) {
+    if (!formData.password) {
       newErrors.password = "Password is required.";
     } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
+      newErrors.password =
+        "Password must be at least 8 characters.";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password.";
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match.";
+      newErrors.confirmPassword =
+        "Please confirm your password.";
+    } else if (
+      formData.password !== formData.confirmPassword
+    ) {
+      newErrors.confirmPassword =
+        "Passwords do not match.";
     }
 
     if (!formData.agree) {
-      newErrors.agree = "Please accept the terms.";
+      newErrors.agree =
+        "You must accept the terms and conditions.";
     }
 
     setErrors(newErrors);
-    return !Object.values(newErrors).some(Boolean);
+
+    return Object.keys(newErrors).length === 0;
   }, [formData]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value, checked, type } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
 
-    // Clear error for the field being edited
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+
+    setAuthError("");
   };
 
-  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+  const handleSubmit = async (
+    e: React.FormEvent
+  ): Promise<SubmitResult> => {
     e.preventDefault();
 
-    if (!validate()) return;
-
-    // Cancel any existing request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (!validate()) {
+      return { success: false };
     }
-
-    abortControllerRef.current = new AbortController();
 
     try {
       setLoading(true);
       setAuthError("");
       setRetryCount(0);
+      console.log(formData);
+      console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
-      // Set timeout for the request
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Request timeout. Please try again."));
-        }, 15000);
-      });
+      console.log(
+        "Supabase Key:",
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 25)
+      );
 
-      const signUpPromise = supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             full_name: formData.fullName,
           },
-          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
 
-      const { data: authData, error: authError } = await Promise.race([
-        signUpPromise,
-        timeoutPromise.then(() => {
-          throw new Error("Request timeout. Please check your connection and try again.");
-        }),
-      ]) as any;
+      console.log("Signup Response:", data);
+      console.log("User Metadata:", data.user?.user_metadata);
+      console.log("Error:", error);
+      if (error) {
+        setAuthError(error.message);
 
-      if (authError) {
-        if (authError.message.includes("User already registered")) {
-          setAuthError("This email is already registered. Please login instead.");
-        } else if (authError.message.includes("network")) {
-          setAuthError("Network error. Please check your internet connection.");
-        } else {
-          setAuthError(authError.message);
-        }
-        return;
+        return {
+          success: false,
+        };
       }
 
-      if (authData?.user) {
-        // Create profile with retry logic
-        let profileCreated = false;
-        let attempts = 0;
-        const maxAttempts = 3;
+      if (!data.user) {
+        setAuthError(
+          "Unable to create account."
+        );
 
-        while (!profileCreated && attempts < maxAttempts) {
-          try {
-            const { error: profileError } = await supabase
-              .from("profiles")
-              .insert([
-                {
-                  id: authData.user.id,
-                  full_name: formData.fullName,
-                  email: formData.email,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                },
-              ]);
-
-            if (profileError) {
-              if (profileError.code === "23505") {
-                profileCreated = true;
-                break;
-              }
-              attempts++;
-              if (attempts === maxAttempts) {
-                throw new Error("Failed to create profile after multiple attempts.");
-              }
-              await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
-            } else {
-              profileCreated = true;
-            }
-          } catch (profileErr) {
-            attempts++;
-            if (attempts === maxAttempts) {
-              throw profileErr;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 1000 * attempts));
-          }
-        }
-
-        setTimeout(() => {
-          router.push("/login");
-        }, 2000);
+        return {
+          success: false,
+        };
       }
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
+
+      return {
+        success: true,
+        user: data.user,
+      };
     } catch (err: any) {
-      console.error("Registration error:", err);
+      console.error(err);
 
-      if (err.name === "AbortError") {
-        setAuthError("Request was cancelled. Please try again.");
-      } else if (err.message.includes("timeout")) {
-        setAuthError("Request timed out. Please check your connection.");
-      } else if (err.message.includes("network")) {
-        setAuthError("Network error. Please check your internet connection.");
-      } else {
-        setAuthError("Something went wrong. Please try again.");
-      }
+      setRetryCount((prev) => prev + 1);
 
-      if (err.name !== "AbortError") {
-        setRetryCount((prev) => prev + 1);
-      }
+      setAuthError(
+        err.message ||
+        "Something went wrong."
+      );
+
+      return {
+        success: false,
+      };
     } finally {
       setLoading(false);
-      abortControllerRef.current = null;
     }
   };
 
   const handleRetry = () => {
-    setRetryCount(0);
     setAuthError("");
-    const form = document.querySelector("form");
-    if (form) {
-      form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
-    }
+    setRetryCount(0);
   };
 
   return {

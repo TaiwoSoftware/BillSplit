@@ -39,6 +39,7 @@ export default function RegisterPage() {
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
+    
     if (!isOnline) {
       showNotification("You're offline. Please check your internet connection.", "error");
       return;
@@ -115,8 +116,8 @@ export default function RegisterPage() {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="text-slate-400 hover:text-slate-600 transition"
-                disabled={loading}
-              >
+              disabled={loading}
+            >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             }

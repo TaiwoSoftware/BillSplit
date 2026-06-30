@@ -1,5 +1,5 @@
 "use client";
-
+import { supabase } from "@/app/lib/supabase";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 
 export default function LoginPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const [showPassword, setShowPassword] =
@@ -43,16 +45,35 @@ export default function LoginPage() {
     }));
   };
 
-  const handleSubmit = (
+  const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
 
-    // Authentication logic goes here
-    console.log(formData);
+    try {
+      setLoading(true);
+      setError("");
 
-    // Temporary navigation to dashboard
-    router.push("/dashboard");
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      console.log("Logged in:", data.user);
+
+      router.push("/dashboard");
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -309,6 +330,23 @@ export default function LoginPage() {
                   Forgot Password?
                 </Link>
               </div>
+              {
+                error && (
+                  <div
+                    className="
+      rounded-xl
+      border
+      border-red-200
+      bg-red-50
+      p-4
+      text-sm
+      text-red-600
+    "
+                  >
+                    {error}
+                  </div>
+                )
+              }
 
               {/* Submit */}
               <button
@@ -328,7 +366,7 @@ export default function LoginPage() {
                   hover:bg-blue-700
                 "
               >
-                Sign In
+                {loading ? "Signing In..." : "Sign In"}
                 <ArrowRight size={18} />
               </button>
 
