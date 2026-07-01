@@ -156,7 +156,7 @@ export default function CreateBillPage() {
           owner_id: user.id,
           title,
           description,
-          amount: Number(amount),
+          total_amount: Number(amount),
           due_date: dueDate,
           split_type: splitType,
           allow_card: paymentMethods.card,
@@ -167,10 +167,10 @@ export default function CreateBillPage() {
 
       if (billError) {
         console.error(billError);
-        alert(billError.message);
         return;
       }
 
+      console.log(bill);
       // Save Participants
       const participantData = participants.map((person) => ({
         bill_id: bill.id,

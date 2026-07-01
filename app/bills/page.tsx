@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+
+import { supabase } from "@/app/lib/supabase";
 
 import Navbar from "@/app/components/layout/Navbar";
 import Sidebar from "@/app/components/layout/Sidebar";
 import BillCard from "@/app/bills/BillCard";
 import Button from "@/app/components/ui/Button";
-import Input from "@/app/components/ui/Input";
 import EmptyState from "@/app/components/ui/EmptyState";
 
 import {
@@ -16,30 +17,52 @@ import {
   X,
 } from "lucide-react";
 
-export default function BillsPage() {
-  const [isSidebarOpen, setIsSidebarOpen] =
-    useState(false);
+type Bill = {
+  id: string;
+  title: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+};
 
-  const bills = [
-    {
-      id: "1",
-      title: "Birthday Dinner",
-      collected: 25000,
-      target: 30000,
-    },
-    {
-      id: "2",
-      title: "Department Project",
-      collected: 80000,
-      target: 100000,
-    },
-    {
-      id: "3",
-      title: "Faculty Excursion",
-      collected: 40000,
-      target: 50000,
-    },
-  ];
+export default function BillsPage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBills();
+  }, []);
+
+  const fetchBills = async () => {
+    setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("bills")
+      .select("*")
+      .eq("owner_id", user.id)
+      .order("created_at", {
+        ascending: false,
+      });
+
+    if (error) {
+      console.error(error);
+      setLoading(false);
+      return;
+    }
+
+    setBills(data || []);
+    setLoading(false);
+  };
 
   return (
     <>
@@ -49,24 +72,15 @@ export default function BillsPage() {
         {/* Overlay */}
         {isSidebarOpen && (
           <div
-            onClick={() =>
-              setIsSidebarOpen(false)
-            }
-            className="
-              fixed inset-0 z-40
-              bg-black/40
-              backdrop-blur-sm
-              lg:hidden
-            "
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
           />
         )}
 
         {/* Sidebar */}
         <Sidebar
           isOpen={isSidebarOpen}
-          onClose={() =>
-            setIsSidebarOpen(false)
-          }
+          onClose={() => setIsSidebarOpen(false)}
         />
 
         {/* Main Content */}
@@ -74,24 +88,11 @@ export default function BillsPage() {
           {/* Header */}
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start gap-4">
-              {/* Mobile Hamburger */}
               <button
                 onClick={() =>
-                  setIsSidebarOpen(
-                    (prev) => !prev
-                  )
+                  setIsSidebarOpen((prev) => !prev)
                 }
-                className="
-                  rounded-xl
-                  border
-                  border-slate-200
-                  bg-white
-                  p-3
-                  shadow-sm
-                  transition
-                  hover:bg-slate-100
-                  lg:hidden
-                "
+                className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:bg-slate-100 lg:hidden"
               >
                 {isSidebarOpen ? (
                   <X size={22} />
@@ -106,8 +107,7 @@ export default function BillsPage() {
                 </h1>
 
                 <p className="mt-2 text-sm text-slate-500 md:text-base">
-                  Create and manage all your shared
-                  bills.
+                  Create and manage all your shared bills.
                 </p>
               </div>
             </div>
@@ -123,36 +123,15 @@ export default function BillsPage() {
             </Link>
           </div>
 
-          {/* Search & Filter */}
-          <section className="mt-10 flex flex-col gap-4 md:flex-row">
-            <div className="flex-1">
-              <Input
-                placeholder="Search bills..."
-              />
-            </div>
-
-            <select
-              className="
-                rounded-xl
-                border
-                border-slate-300
-                bg-white
-                px-4
-                py-3
-                outline-none
-                md:w-52
-              "
-            >
-              <option>All Bills</option>
-              <option>Active</option>
-              <option>Completed</option>
-              <option>Pending</option>
-            </select>
-          </section>
-
-          {/* Bills Grid */}
+          {/* Bills */}
           <section className="mt-10">
-            {bills.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <p className="text-slate-500">
+                  Loading bills...
+                </p>
+              </div>
+            ) : bills.length === 0 ? (
               <EmptyState
                 title="No Bills Yet"
                 description="Create your first bill and start collecting contributions."
@@ -164,10 +143,8 @@ export default function BillsPage() {
                     key={bill.id}
                     id={bill.id}
                     title={bill.title}
-                    collected={
-                      bill.collected
-                    }
-                    target={bill.target}
+                    collected={0}
+                    target={bill.total_amount}
                   />
                 ))}
               </div>

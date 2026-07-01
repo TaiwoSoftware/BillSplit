@@ -33,7 +33,7 @@ export default function BillCard({
       </div>
 
       <Link
-        href={`/bills/${id}`}
+        href={`/pay/${id}`}
         className="mt-6 inline-block font-semibold text-blue-600"
       >
         View Bill →
