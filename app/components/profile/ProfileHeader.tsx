@@ -47,9 +47,7 @@ export default function ProfileHeader() {
     });
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
 
         setFormData((prev) => ({
@@ -58,15 +56,42 @@ export default function ProfileHeader() {
         }));
     };
 
-    const handleAvatarChange = (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
 
         if (!file) return;
 
-        const imageUrl = URL.createObjectURL(file);
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
 
+        if (!user) return;
+
+        const filePath = `${user.id}/avatar`;
+        const { error } = await supabase.storage
+            .from("avatars")
+            .upload(filePath, file, {
+                upsert: true,
+            });
+
+        if (error) {
+            console.error("Storage Error:", error);
+            alert(error.message);
+            return;
+        }
+
+        const { data } = supabase.storage
+            .from("avatars")
+            .getPublicUrl(filePath);
+
+        const imageUrl = data.publicUrl;
+        console.log("Uploaded Image URL:", imageUrl);
+        await supabase
+            .from("profiles")
+            .update({
+                avatar_url: imageUrl,
+            })
+            .eq("id", user.id);
         setProfile((prev) => ({
             ...prev,
             avatar: imageUrl,
@@ -136,7 +161,11 @@ export default function ProfileHeader() {
             alert("You are not logged in.");
             return;
         }
-
+        console.log("Saving avatar:", formData.avatar);
+        console.log("Saving profile:", {
+            full_name: formData.name,
+            avatar_url: formData.avatar,
+        });
         const { error } = await supabase
             .from("profiles")
             .update({
@@ -144,15 +173,17 @@ export default function ProfileHeader() {
                 phone: formData.phone,
                 country: formData.location,
                 occupation: formData.role,
-                avatar_url: formData.avatar,
+
             })
             .eq("id", user.id);
 
         if (error) {
-            console.error(error);
-            alert("Failed to update profile.");
+            console.error("Update Error:", error);
+            alert(error.message);
             return;
         }
+
+        console.log("Profile updated successfully.");
 
         // Update the UI immediately
         setProfile((prev) => ({
@@ -167,9 +198,15 @@ export default function ProfileHeader() {
 
     const shareProfile = async () => {
         try {
-            await navigator.clipboard.writeText(
-                `${window.location.origin}/profile`
-            );
+            const { data: { user } } =
+                await supabase.auth.getUser();
+
+            if (!user) return;
+
+            const profileUrl =
+                `${window.location.origin}/profile/${user.id}`;
+
+            await navigator.clipboard.writeText(profileUrl);
 
             alert("Profile link copied!");
         } catch {
