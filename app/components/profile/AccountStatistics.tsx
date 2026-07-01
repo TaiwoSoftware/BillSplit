@@ -2,12 +2,6 @@ import React from 'react'
 import Button from "@/app/components/ui/Button";
 
 import {
-    Camera,
-    Mail,
-    Phone,
-    MapPin,
-    CalendarDays,
-    Pencil,
     Receipt,
     Activity,
     Wallet,
