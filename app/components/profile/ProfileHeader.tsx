@@ -234,10 +234,10 @@ export default function ProfileHeader() {
                         {/* Profile Picture */}
                         <div className="relative">
                             <img
-                                src={profile.avatar}
-                                alt={profile.name}
-                                className="h-28 w-28 rounded-full border-4 border-blue-100 object-cover"
-                            />
+  src={profile.avatar || "/default-avatar.png"}
+  alt={profile.name}
+  className="h-28 w-28 rounded-full border-4 border-blue-100 object-cover"
+/>
 
                             {/* Hidden File Input */}
                             <input

@@ -36,9 +36,12 @@ type Bill = {
 };
 
 type DashboardStats = {
-  totalCollected: number;
+  totalBills: number;
   activeBills: number;
-  contributors: number;
+  totalCollected: number;
+  totalParticipants: number;
+  completedBills: number;
+  pendingPayments: number;
   completionRate: number;
 };
 
@@ -50,58 +53,18 @@ export default function DashboardPage() {
   const [bills, setBills] = useState<Bill[]>([]);
 
   const [stats, setStats] = useState<DashboardStats>({
-    totalCollected: 0,
+    totalBills: 0,
     activeBills: 0,
-    contributors: 0,
+    totalCollected: 0,
+    totalParticipants: 0,
+    completedBills: 0,
+    pendingPayments: 0,
     completionRate: 0,
   });
   useEffect(() => {
     fetchDashboard();
   }, []);
-  // const fetchDashboardData = async () => {
-  //   const {
-  //     data: { user },
-  //   } = await supabase.auth.getUser();
 
-  //   if (!user) return;
-
-  //   const { data: billsData, error } = await supabase
-  //     .from("bills")
-  //     .select(`
-  //     *,
-  //     bill_participants(
-  //       amount,
-  //       payment_status
-  //     )
-  //   `)
-  //     .eq("owner_id", user.id);
-
-  //   if (error) {
-  //     console.error(error);
-  //     return;
-  //   }
-
-  //   const formattedBills =
-  //     (billsData ?? []).map((bill) => {
-  //       const collected =
-  //         bill.bill_participants
-  //           ?.filter(
-  //             (p) => p.payment_status === "paid"
-  //           )
-  //           .reduce(
-  //             (sum, p) => sum + Number(p.amount),
-  //             0
-  //           ) ?? 0;
-
-  //       return {
-  //         ...bill,
-  //         collected,
-  //         target: bill.total_amount,
-  //       };
-  //     });
-
-  //   setBills(formattedBills);
-  // };
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -142,11 +105,11 @@ export default function DashboardPage() {
         const collected =
           bill.bill_participants
             ?.filter(
-              (participant) =>
+              (participant: { payment_status: string; }) =>
                 participant.payment_status === "paid"
             )
             .reduce(
-              (sum, participant) =>
+              (sum: number, participant: { amount: any; }) =>
                 sum + Number(participant.amount),
               0
             ) ?? 0;
@@ -193,8 +156,21 @@ export default function DashboardPage() {
         (bill) => bill.status === "active"
       ).length || 0;
 
-    const contributors =
+    const totalBills = billsData?.length || 0;
+
+    const totalParticipants =
       participantData?.length || 0;
+
+    const completedBills =
+      billsData?.filter(
+        (bill) => bill.status === "completed"
+      ).length || 0;
+
+    const pendingPayments =
+      participantData?.filter(
+        (participant) =>
+          participant.payment_status !== "paid"
+      ).length || 0;
 
     const totalTarget =
       billsData?.reduce(
@@ -212,10 +188,13 @@ export default function DashboardPage() {
         );
 
     setStats({
-      totalCollected,
+      totalBills,
       activeBills,
-      contributors,
+      totalCollected,
       completionRate,
+      totalParticipants,
+      completedBills,
+      pendingPayments,
     });
 
     setLoading(false);
@@ -320,8 +299,8 @@ export default function DashboardPage() {
             />
 
             <StatCard
-              title="Contributors"
-              value={stats.contributors.toString()}
+              title="Participants"
+              value={stats.totalParticipants.toString()}
               icon={<Users size={28} />}
             />
 

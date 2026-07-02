@@ -8,7 +8,7 @@ import Sidebar from "@/app/components/layout/Sidebar";
 import ProfileHeader from "@/app/components/profile/ProfileHeader";
 import AccountStatistics from "@/app/components/profile/AccountStatistics";
 import NotificationCard from "@/app/components/settings/NotificationCard";
-import SecuritySection from "../components/profile/SecuritySection";
+
 import RecentActivity from "../components/profile/RecentActivity";
 import RecentBills from "../components/profile/RecentBills";
 import Preferences from "../components/profile/Preferences";
@@ -77,13 +77,13 @@ export default function ProfilePage() {
 
           <NotificationCard />
 
-          <SecuritySection />
+        
 
           <RecentActivity />
 
           <RecentBills />
 
-          <Preferences />
+      
 
           <ExportData />
 

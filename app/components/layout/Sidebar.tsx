@@ -1,4 +1,6 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
 
 import Link from "next/link";
 import {
@@ -21,7 +23,7 @@ const navLinks = [
     label: "Dashboard",
     icon: LayoutDashboard,
   },
-   {
+  {
     href: "/profile",
     label: "Profile",
     icon: UserCircle,
@@ -37,6 +39,21 @@ const navLinks = [
     icon: Settings,
   },
 ];
+
+
+const handleLogout = async () => {
+  const router = useRouter();
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.error("Logout failed:", error.message);
+    return;
+  }
+
+  router.push("/login"); // or "/" depending on your app
+  router.refresh();
+};
 
 export default function Sidebar({
   isOpen = false,
@@ -105,14 +122,16 @@ export default function Sidebar({
         {/* Footer */}
         <div className="border-t p-4">
           <button
+            onClick={handleLogout}
             className="
-              flex w-full items-center gap-3
-              rounded-xl px-4 py-3
-              text-red-600
-              transition-all
-              hover:bg-red-50
-            "
+    flex w-full items-center gap-3
+    rounded-xl px-4 py-3
+    text-red-600
+    transition-all
+    hover:bg-red-50
+  "
           >
+
             <LogOut size={20} />
             <span className="font-medium">
               Logout

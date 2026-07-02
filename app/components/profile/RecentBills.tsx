@@ -1,77 +1,132 @@
-import React from 'react'
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "@/app/lib/supabase";
+
+type Bill = {
+  id: string;
+  title: string;
+  total_amount: number;
+  status: string;
+};
 
 export default function RecentBills() {
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecentBills();
+  }, []);
+
+  const fetchRecentBills = async () => {
+    setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("bills")
+      .select("id,title,total_amount,status")
+      .eq("owner_id", user.id)
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(5);
+
+    if (error) {
+      console.error(error);
+    } else {
+      setBills(data);
+    }
+
+    setLoading(false);
+  };
+
+  const statusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return "text-green-600";
+
+      case "active":
+        return "text-blue-600";
+
+      case "cancelled":
+        return "text-red-600";
+
+      default:
+        return "text-orange-500";
+    }
+  };
+
   return (
-   <section className="mt-8 rounded-3xl bg-white p-8 shadow-sm">
+    <section className="mt-8 rounded-3xl bg-white p-8 shadow-sm">
+      <h2 className="text-xl font-bold">
+        Recent Bills
+      </h2>
 
-                        <h2 className="text-xl font-bold">
-                            Recent Bills
-                        </h2>
+      {loading ? (
+        <p className="mt-6 text-slate-500">
+          Loading bills...
+        </p>
+      ) : bills.length === 0 ? (
+        <p className="mt-6 text-slate-500">
+          No bills created yet.
+        </p>
+      ) : (
+        <div className="mt-8 overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b text-left">
+                <th className="pb-3">
+                  Bill
+                </th>
 
-                        <div className="mt-8 overflow-x-auto">
+                <th className="pb-3">
+                  Amount
+                </th>
 
-                            <table className="w-full">
+                <th className="pb-3">
+                  Status
+                </th>
+              </tr>
+            </thead>
 
-                                <thead>
+            <tbody>
+              {bills.map((bill) => (
+                <tr
+                  key={bill.id}
+                  className="border-b last:border-b-0"
+                >
+                  <td className="py-4 font-medium">
+                    {bill.title}
+                  </td>
 
-                                    <tr className="border-b text-left">
+                  <td>
+                    ₦
+                    {Number(
+                      bill.total_amount
+                    ).toLocaleString()}
+                  </td>
 
-                                        <th className="pb-3">
-                                            Bill
-                                        </th>
-
-                                        <th className="pb-3">
-                                            Amount
-                                        </th>
-
-                                        <th className="pb-3">
-                                            Status
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody>
-
-                                    <tr className="border-b">
-
-                                        <td className="py-4">
-                                            Birthday Dinner
-                                        </td>
-
-                                        <td>
-                                            ₦30,000
-                                        </td>
-
-                                        <td className="text-green-600">
-                                            Active
-                                        </td>
-
-                                    </tr>
-
-                                    <tr>
-
-                                        <td className="py-4">
-                                            House Rent
-                                        </td>
-
-                                        <td>
-                                            ₦200,000
-                                        </td>
-
-                                        <td className="text-blue-600">
-                                            Completed
-                                        </td>
-
-                                    </tr>
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </section>
-  )
+                  <td
+                    className={statusColor(
+                      bill.status
+                    )}
+                  >
+                    {bill.status}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
 }
