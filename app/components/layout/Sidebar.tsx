@@ -7,6 +7,7 @@ import {
   Settings,
   LogOut,
   X,
+  UserCircle,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -19,6 +20,11 @@ const navLinks = [
     href: "/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
+  },
+   {
+    href: "/profile",
+    label: "Profile",
+    icon: UserCircle,
   },
   {
     href: "/bills",
@@ -57,7 +63,7 @@ export default function Sidebar({
         {/* Header */}
         <div className="flex items-center justify-between border-b p-6">
           <h2 className="text-2xl font-bold text-blue-600">
-            BillSplit 💸
+            Welcome! 👋
           </h2>
 
           <button

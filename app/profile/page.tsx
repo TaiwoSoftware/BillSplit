@@ -14,13 +14,17 @@ import RecentBills from "../components/profile/RecentBills";
 import Preferences from "../components/profile/Preferences";
 import ExportData from "../components/profile/ExportData";
 import DangerZone from "../components/profile/DangerZone";
+import {
+  Menu,
+  X,
+} from "lucide-react";
 
 export default function ProfilePage() {
   const [isSidebarOpen, setIsSidebarOpen] =
     useState(false);
 
   return (
-    <>
+    <main className="flex min-h-screen flex-col">
       <Navbar />
 
       <div className="relative flex min-h-[calc(100vh-80px)] bg-slate-50">
@@ -44,7 +48,29 @@ export default function ProfilePage() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-x-hidden p-5 md:p-8 lg:p-10">
-        
+          <button
+            onClick={() =>
+              setIsSidebarOpen((prev) => !prev)
+            }
+            className="
+        rounded-xl
+        border
+        border-slate-200
+        bg-white
+        p-3
+        shadow-sm
+        transition
+        hover:bg-slate-100
+        lg:hidden
+      "
+          >
+            {isSidebarOpen ? (
+              <X size={22} />
+            ) : (
+              <Menu size={22} />
+            )}
+          </button>
+
           <ProfileHeader />
 
           <AccountStatistics />
@@ -64,6 +90,6 @@ export default function ProfilePage() {
           <DangerZone />
         </main>
       </div>
-    </>
+    </main>
   );
 }
