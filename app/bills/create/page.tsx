@@ -752,7 +752,7 @@ export default function CreateBillPage() {
                       Share Link
                     </Button>
 
-                    <Link href={`/bills/${billId}`}>
+                    <Link href={`/pay/${billId}`}>
                       <Button variant="outline" className="w-full">
                         <ExternalLink size={18} />
                         View Bill

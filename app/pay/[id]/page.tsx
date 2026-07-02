@@ -1,9 +1,8 @@
 import { supabase } from "@/app/lib/supabase";
 import {
-    Calendar,
     Wallet,
     Users,
-    BadgeCheck,
+
     ArrowRight,
     Mail,
     User,

@@ -1,6 +1,6 @@
 "use client";
-
-import { useState } from "react";
+import { supabase } from "@/app/lib/supabase";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/app/components/layout/Navbar";
 import Sidebar from "@/app/components/layout/Sidebar";
@@ -17,25 +17,210 @@ import {
   Menu,
   X,
 } from "lucide-react";
+type Bill = {
+  id: string;
+  title: string;
+  description: string | null;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  owner_id: string;
+
+  bill_participants?: {
+    amount: number;
+    payment_status: string;
+  }[];
+
+  collected: number;
+  target: number;
+};
+
+type DashboardStats = {
+  totalCollected: number;
+  activeBills: number;
+  contributors: number;
+  completionRate: number;
+};
 
 export default function DashboardPage() {
-  const [isSidebarOpen, setIsSidebarOpen] =
-    useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const bills = [
-    {
-      id: "1",
-      title: "Birthday Dinner",
-      collected: 25000,
-      target: 30000,
-    },
-    {
-      id: "2",
-      title: "Department Project",
-      collected: 80000,
-      target: 100000,
-    },
-  ];
+  const [loading, setLoading] = useState(true);
+
+  const [bills, setBills] = useState<Bill[]>([]);
+
+  const [stats, setStats] = useState<DashboardStats>({
+    totalCollected: 0,
+    activeBills: 0,
+    contributors: 0,
+    completionRate: 0,
+  });
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+  // const fetchDashboardData = async () => {
+  //   const {
+  //     data: { user },
+  //   } = await supabase.auth.getUser();
+
+  //   if (!user) return;
+
+  //   const { data: billsData, error } = await supabase
+  //     .from("bills")
+  //     .select(`
+  //     *,
+  //     bill_participants(
+  //       amount,
+  //       payment_status
+  //     )
+  //   `)
+  //     .eq("owner_id", user.id);
+
+  //   if (error) {
+  //     console.error(error);
+  //     return;
+  //   }
+
+  //   const formattedBills =
+  //     (billsData ?? []).map((bill) => {
+  //       const collected =
+  //         bill.bill_participants
+  //           ?.filter(
+  //             (p) => p.payment_status === "paid"
+  //           )
+  //           .reduce(
+  //             (sum, p) => sum + Number(p.amount),
+  //             0
+  //           ) ?? 0;
+
+  //       return {
+  //         ...bill,
+  //         collected,
+  //         target: bill.total_amount,
+  //       };
+  //     });
+
+  //   setBills(formattedBills);
+  // };
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // Bills
+    const { data: billsData, error: billsError } =
+      await supabase
+        .from("bills")
+        .select(`
+    *,
+    bill_participants(
+      amount,
+      payment_status
+    )
+  `)
+        .eq("owner_id", user.id)
+        .order("created_at", {
+          ascending: false,
+        });
+
+    if (billsError) {
+      console.error(billsError);
+      setLoading(false);
+      return;
+    }
+
+    const formattedBills =
+      (billsData ?? []).map((bill) => {
+        const collected =
+          bill.bill_participants
+            ?.filter(
+              (participant) =>
+                participant.payment_status === "paid"
+            )
+            .reduce(
+              (sum, participant) =>
+                sum + Number(participant.amount),
+              0
+            ) ?? 0;
+
+        return {
+          ...bill,
+          collected,
+          target: Number(bill.total_amount),
+        };
+      });
+
+    setBills(formattedBills);
+
+    const billIds =
+      billsData?.map((bill) => bill.id) || [];
+
+    // Participants
+    const {
+      data: participantData,
+      error: participantError,
+    } = await supabase
+      .from("bill_participants")
+      .select("*")
+      .in("bill_id", billIds);
+
+    if (participantError) {
+      console.error(participantError);
+    }
+
+    const totalCollected =
+      participantData
+        ?.filter(
+          (participant) =>
+            participant.payment_status === "paid"
+        )
+        .reduce(
+          (sum, participant) =>
+            sum + Number(participant.amount),
+          0
+        ) || 0;
+
+    const activeBills =
+      billsData?.filter(
+        (bill) => bill.status === "active"
+      ).length || 0;
+
+    const contributors =
+      participantData?.length || 0;
+
+    const totalTarget =
+      billsData?.reduce(
+        (sum, bill) =>
+          sum + Number(bill.total_amount),
+        0
+      ) || 0;
+
+    const completionRate =
+      totalTarget === 0
+        ? 0
+        : Math.round(
+          (totalCollected / totalTarget) *
+          100
+        );
+
+    setStats({
+      totalCollected,
+      activeBills,
+      contributors,
+      completionRate,
+    });
+
+    setLoading(false);
+  };
+  console.log(bills);
 
   return (
     <>
@@ -124,60 +309,53 @@ export default function DashboardPage() {
           <section className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
               title="Total Collected"
-              value="₦105,000"
+              value={`₦${stats.totalCollected.toLocaleString()}`}
               icon={<Wallet size={28} />}
             />
 
             <StatCard
               title="Active Bills"
-              value="2"
+              value={stats.activeBills.toString()}
               icon={<Receipt size={28} />}
             />
 
             <StatCard
               title="Contributors"
-              value="15"
+              value={stats.contributors.toString()}
               icon={<Users size={28} />}
             />
 
             <StatCard
               title="Completion Rate"
-              value="81%"
+              value={`${stats.completionRate}%`}
               icon={<TrendingUp size={28} />}
             />
           </section>
 
           {/* Recent Bills */}
           <section className="mt-14">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">
-                Recent Bills
-              </h2>
-
-              <Link
-                href="/bills"
-                className="
-                  font-medium
-                  text-blue-600
-                  transition
-                  hover:text-blue-700
-                "
-              >
-                View All
-              </Link>
-            </div>
-
             <div className="mt-8 grid gap-6 lg:grid-cols-2">
-              {bills.map((bill) => (
-                <BillCard
-                  key={bill.id}
-                  id={bill.id}
-                  title={bill.title}
-                  collected={bill.collected}
-                  target={bill.target}
-                />
-              ))}
+              {loading ? (
+                <p className="text-slate-500">
+                  Loading...
+                </p>
+              ) : bills.length === 0 ? (
+                <p className="text-slate-500">
+                  No bills yet.
+                </p>
+              ) : (
+                bills.slice(0, 4).map((bill) => (
+                  <BillCard
+                    key={bill.id}
+                    id={bill.id}
+                    title={bill.title}
+                    collected={bill.collected}
+                    target={bill.target}
+                  />
+                ))
+              )}
             </div>
+
           </section>
         </main>
       </div>
