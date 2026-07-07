@@ -295,7 +295,7 @@ export default async function Page({
             hover:bg-blue-700
         "
                         >
-                            Pay with Nomba
+                            Pay Now
                             <ArrowRight size={22} />
                         </button>
                     </Link>

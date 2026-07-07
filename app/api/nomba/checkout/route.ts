@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const { billId, participantId } = await req.json();
-
+    const myReference = crypto.randomUUID();
     const { data: bill } = await supabase
       .from("bills")
       .select("*")
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
             customerId: participant.id,
             amount: Number(participant.amount).toFixed(2),
             currency: "NGN",
-            orderReference: crypto.randomUUID(),
+            orderReference: myReference,
             allowedPaymentMethods: ["Card", "Transfer"],
             orderMetaData: {
               billId,
@@ -53,10 +53,15 @@ export async function POST(req: NextRequest) {
           },
           tokenizeCard: true,
         }),
-      }
-    );
 
+      }
+
+    );
     const result = await response.json();
+    console.log("My Reference:", myReference);
+    console.log("Nomba Reference:", result.data?.orderReference);
+
+
 
     console.log("Nomba Response:");
     console.dir(result, { depth: null });
