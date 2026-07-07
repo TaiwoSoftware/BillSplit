@@ -18,6 +18,12 @@ import {
   Share2,
   ExternalLink,
 } from "lucide-react";
+type Participant = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+};
 
 export default function CreateBillPage() {
   const [isSidebarOpen, setIsSidebarOpen] =
@@ -37,6 +43,7 @@ export default function CreateBillPage() {
         id: crypto.randomUUID(),
         name: "",
         email: "",
+        phone: "",
       },
     ]);
 
@@ -57,6 +64,7 @@ export default function CreateBillPage() {
         id: crypto.randomUUID(),
         name: "",
         email: "",
+        phone: "",
       },
     ]);
   };
@@ -70,7 +78,7 @@ export default function CreateBillPage() {
 
   const updateParticipant = (
     id: string,
-    field: "name" | "email",
+    field: "name" | "email" | "phone",
     value: string
   ) => {
     setParticipants((prev) =>
@@ -120,12 +128,14 @@ export default function CreateBillPage() {
         }
 
         if (!participant.email.trim()) {
-          newErrors[
-            `email-${index}`
-          ] = "Email is required";
+          newErrors[`email-${index}`] = "Email is required";
+        }
+
+        if (!participant.phone.trim()) {
+          newErrors[`phone-${index}`] = "Phone number is required";
         }
       }
-    );
+    )
 
     setErrors(newErrors);
 
@@ -164,18 +174,19 @@ export default function CreateBillPage() {
         })
         .select()
         .single();
-
       if (billError) {
         console.error(billError);
         return;
       }
 
       console.log(bill);
+      const paymentLink = `${window.location.origin}/pay/${bill.id}`;
       // Save Participants
-      const participantData = participants.map((person) => ({
+      const participantData = participants.map(person => ({
         bill_id: bill.id,
         name: person.name,
         email: person.email,
+        phone: person.phone,
         amount:
           splitType === "equal"
             ? Number(amount) / participants.length
@@ -185,7 +196,64 @@ export default function CreateBillPage() {
       const { error: participantError } = await supabase
         .from("bill_participants")
         .insert(participantData);
+      for (const person of participantData) {
 
+        const amountToPay =
+          person.amount ??
+          Number(amount) / participantData.length;
+
+        await fetch("/api/send-bill-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+
+            email: person.email,
+
+            name: person.name,
+
+            billTitle: title,
+
+            amount: amountToPay,
+
+            billLink: paymentLink,
+
+          })
+        });
+
+        await fetch("/api/send-whatsapp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone: person.phone,
+            name: person.name,
+            billTitle: title,
+            billLink: paymentLink,
+            amount:
+              splitType === "equal"
+                ? Number(amount) / participants.length
+                : amount,
+            link: `${window.location.origin}/pay/${bill.id}`,
+
+          }),
+
+        });
+        console.log("Sending WhatsApp to:", person.name, person.phone);
+      }
+      await fetch("/api/notifications/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bill,
+          participants: participantData,
+          billLink: `${window.location.origin}/pay/${bill.id}`,
+        }),
+      });
       if (participantError) {
         console.error(participantError);
         alert(participantError.message);
@@ -195,9 +263,9 @@ export default function CreateBillPage() {
       // Success
       setBillId(bill.id);
 
-      const link = `${window.location.origin}/pay/${bill.id}`;
+      // const link = `${window.location.origin}/pay/${bill.id}`;
 
-      setBillLink(link);
+
 
       setShowSuccessModal(true);
     } catch (err) {
@@ -562,6 +630,23 @@ export default function CreateBillPage() {
                             }
                           </p>
                         )}
+                      <Input
+                        placeholder="Phone Number"
+                        value={participant.phone}
+                        onChange={(e) =>
+                          updateParticipant(
+                            participant.id,
+                            "phone",
+                            e.target.value
+                          )
+                        }
+                      />
+
+                      {errors[`phone-${index}`] && (
+                        <p className="text-sm text-red-500">
+                          {errors[`phone-${index}`]}
+                        </p>
+                      )}
                     </div>
                   )
                 )}

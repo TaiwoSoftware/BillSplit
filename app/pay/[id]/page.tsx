@@ -1,4 +1,5 @@
 import { supabase } from "@/app/lib/supabase";
+import Link from "next/link";
 import {
     Wallet,
     Users,
@@ -50,8 +51,7 @@ export default async function Page({
         .from("bill_participants")
         .select("*")
         .eq("bill_id", id);
-console.log("Participants:", participants);
-console.log("Count:", participants?.length);
+ 
     const participantCount = participants?.length ?? 0;
 
     const dueDate = new Date(
@@ -240,8 +240,8 @@ console.log("Count:", participants?.length);
 
                                     <span
                                         className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${participant.payment_status === "paid"
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-yellow-100 text-yellow-700"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-yellow-100 text-yellow-700"
                                             }`}
                                     >
                                         {participant.payment_status ?? "Pending"}
@@ -275,28 +275,30 @@ console.log("Count:", participants?.length);
                         Click below to securely complete your contribution through Nomba.
                     </p>
 
-                    <button
-                        className="
-              mt-8
-              flex
-              w-full
-              items-center
-              justify-center
-              gap-3
-              rounded-2xl
-              bg-blue-600
-              py-5
-              text-lg
-              font-semibold
-              text-white
-              transition
-              hover:bg-blue-700
-            "
-                    >
-                        Pay with Nomba
+                   
 
-                        <ArrowRight size={22} />
-                    </button>
+                    <Link href={`/pay/${id}/checkout`}>
+                        <button
+                            className="
+            mt-8
+            flex
+            w-full
+            items-center
+            justify-center
+            gap-3
+            rounded-2xl
+            bg-blue-600
+            py-5
+            text-lg
+            font-semibold
+            text-white
+            hover:bg-blue-700
+        "
+                        >
+                            Pay with Nomba
+                            <ArrowRight size={22} />
+                        </button>
+                    </Link>
 
                 </div>
 
