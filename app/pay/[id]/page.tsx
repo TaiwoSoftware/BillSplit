@@ -272,7 +272,7 @@ export default async function Page({
                     </div>
 
                     <p className="mt-3 text-slate-500">
-                        Click below to securely complete your contribution through Nomba.
+                        Click below to securely complete your contribution through Nomba
                     </p>
 
                    
