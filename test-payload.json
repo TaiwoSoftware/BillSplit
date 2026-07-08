@@ -1,0 +1,15 @@
+{
+  "event_type": "payment_success",
+  "requestId": "test123",
+  "data": {
+    "merchant": { "userId": "u1", "walletId": "w1" },
+    "transaction": {
+      "transactionId": "t1",
+      "type": "vact_transfer",
+      "time": "2026-07-08T10:00:00Z",
+      "responseCode": "00",
+      "transactionAmount": 100
+    },
+    "customer": { "senderName": "Test User" }
+  }
+}

@@ -20,14 +20,12 @@ async function hmacSha256Hex(message: string, secret: string) {
 Deno.serve(async (req) => {
   try {
     const rawBody = await req.text();
-    const payload = JSON.parse(rawBody);
     console.log("Raw body:", rawBody);
 
+    // Health check: no body means someone just pinged the URL manually
     if (!rawBody) {
       return new Response(
-        JSON.stringify({
-          message: "Webhook is alive",
-        }),
+        JSON.stringify({ message: "Webhook is alive" }),
         { status: 200 }
       );
     }
