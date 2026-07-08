@@ -1,11 +1,13 @@
 import Link from "next/link";
 import Progress from "../components/ui/Progress";
+import { Trash2 } from "lucide-react";
 
 interface BillCardProps {
   id: string;
   title: string;
   collected: number;
   target: number;
+  onDelete?: (id: string) => void;
 }
 
 export default function BillCard({
@@ -13,9 +15,10 @@ export default function BillCard({
   title,
   collected,
   target,
+  onDelete,
 }: BillCardProps) {
   const percentage =
-    (collected / target) * 100;
+    target > 0 ? (collected / target) * 100 : 0;
 
   return (
     <div className="rounded-3xl bg-white p-6 shadow-sm">
@@ -24,20 +27,30 @@ export default function BillCard({
       </h3>
 
       <p className="mt-3 text-slate-500">
-        ₦{collected.toLocaleString()} /
-        ₦{target.toLocaleString()}
+        ₦{collected.toLocaleString()} / ₦{target.toLocaleString()}
       </p>
 
       <div className="mt-4">
         <Progress value={percentage} />
       </div>
 
-      <Link
-        href={`/pay/${id}`}
-        className="mt-6 inline-block font-semibold text-blue-600"
-      >
-        View Bill →
-      </Link>
+      <div className="mt-4 flex items-center justify-between">
+        <Link
+          href={`/pay/${id}`}
+          className="inline-block font-semibold text-blue-600"
+        >
+          View Bill →
+        </Link>
+
+        {onDelete && (
+          <button
+            onClick={() => onDelete(id)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

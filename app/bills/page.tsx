@@ -15,6 +15,7 @@ import {
   Plus,
   Menu,
   X,
+  Trash2,
 } from "lucide-react";
 
 type Bill = {
@@ -33,6 +34,27 @@ export default function BillsPage() {
   useEffect(() => {
     fetchBills();
   }, []);
+  const deleteBill = async (billId: string) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this bill?"
+    );
+
+    if (!confirmDelete) return;
+
+    const { error } = await supabase
+      .from("bills")
+      .delete()
+      .eq("id", billId);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to delete bill.");
+      return;
+    }
+
+    // Remove from UI without refetching
+    setBills((prev) => prev.filter((bill) => bill.id !== billId));
+  };
 
   const fetchBills = async () => {
     setLoading(true);
@@ -122,12 +144,12 @@ export default function BillsPage() {
               </Button>
             </Link>
           </div>
-         
+
 
           {/* Bills */}
           <section className="mt-10">
             {loading ? (
-              <div className="flex justify-center py-20">
+              <div   className="flex justify-center py-20">
                 <p className="text-slate-500">
                   Loading bills...
                 </p>
@@ -140,13 +162,16 @@ export default function BillsPage() {
             ) : (
               <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {bills.map((bill) => (
-                  <BillCard
-                    key={bill.id}
-                    id={bill.id}
-                    title={bill.title}
-                    collected={0}
-                    target={bill.total_amount}
-                  />
+                  
+                    <BillCard
+                      key={bill.id}
+                      id={bill.id}
+                      title={bill.title}
+                      collected={0}
+                      target={bill.total_amount}
+                      onDelete={deleteBill}
+                    />
+                  
                 ))}
               </div>
             )}

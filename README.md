@@ -19,6 +19,9 @@ Collecting money from groups is often stressful and disorganized:
 BillSplit provides a centralized platform that automates payment collection and contribution tracking.
 
 ---
+## Login Credentials
+email:davcodes24@gmail.com
+password:T2345@24
 
 ## Solution
 

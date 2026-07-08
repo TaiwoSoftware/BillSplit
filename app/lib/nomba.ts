@@ -3,9 +3,9 @@ import axios from "axios";
 export async function getNombaToken() {
   try {
     console.log("Base URL:", process.env.NOMBA_BASE_URL);
-console.log("Client ID:", process.env.NOMBA_CLIENT_ID);
-console.log("Account ID:", process.env.NOMBA_ACCOUNT_ID);
-console.log("Client Secret Exists:", !!process.env.NOMBA_CLIENT_SECRET);
+    console.log("Client ID:", process.env.NOMBA_CLIENT_ID);
+    console.log("Account ID:", process.env.NOMBA_ACCOUNT_ID);
+    console.log("Client Secret Exists:", !!process.env.NOMBA_CLIENT_SECRET);
     const response = await axios.post(
       `${process.env.NOMBA_BASE_URL}/v1/auth/token/issue`,
       {

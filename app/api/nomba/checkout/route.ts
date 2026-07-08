@@ -39,18 +39,28 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           order: {
             callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment-success`,
+
+            webhookUrl:
+              "https://awpqlhjqcfrxsrhyyvvm.supabase.co/functions/v1/nomba-webhook",
+
             customerEmail: participant.email,
             customerId: participant.id,
+
             amount: Number(participant.amount).toFixed(2),
+
             currency: "NGN",
+
             orderReference: myReference,
+
             allowedPaymentMethods: ["Card", "Transfer"],
+
             orderMetaData: {
               billId,
               participantId,
               billTitle: bill.title,
             },
           },
+
           tokenizeCard: true,
         }),
 
