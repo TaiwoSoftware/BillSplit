@@ -26,36 +26,29 @@ type Participant = {
 };
 
 export default function CreateBillPage() {
-  const [isSidebarOpen, setIsSidebarOpen] =
-    useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] =
-    useState("");
+  const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [splitType, setSplitType] =
-    useState("equal");
+  const [splitType, setSplitType] = useState("equal");
 
-  const [participants, setParticipants] =
-    useState([
-      {
-        id: crypto.randomUUID(),
-        name: "",
-        email: "",
-        phone: "",
-      },
-    ]);
+  const [participants, setParticipants] = useState([
+    {
+      id: crypto.randomUUID(),
+      name: "",
+      email: "",
+      phone: "",
+    },
+  ]);
 
-  const [errors, setErrors] = useState<
-    Record<string, string>
-  >({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [paymentMethods, setPaymentMethods] =
-    useState({
-      card: true,
-      bank: true,
-    });
+  const [paymentMethods, setPaymentMethods] = useState({
+    card: true,
+    bank: true,
+  });
 
   const addParticipant = () => {
     setParticipants((prev) => [
@@ -79,69 +72,56 @@ export default function CreateBillPage() {
   const updateParticipant = (
     id: string,
     field: "name" | "email" | "phone",
-    value: string
+    value: string,
   ) => {
     setParticipants((prev) =>
       prev.map((participant) =>
         participant.id === id
           ? {
-            ...participant,
-            [field]: value,
-          }
-          : participant
-      )
+              ...participant,
+              [field]: value,
+            }
+          : participant,
+      ),
     );
   };
 
   const validate = () => {
-    const newErrors: Record<
-      string,
-      string
-    > = {};
+    const newErrors: Record<string, string> = {};
 
     if (!title.trim()) {
-      newErrors.title =
-        "Bill title is required";
+      newErrors.title = "Bill title is required";
     }
 
     if (!description.trim()) {
-      newErrors.description =
-        "Description is required";
+      newErrors.description = "Description is required";
     }
 
     if (!amount.trim()) {
-      newErrors.amount =
-        "Target amount is required";
+      newErrors.amount = "Target amount is required";
     }
 
     if (!dueDate) {
-      newErrors.dueDate =
-        "Due date is required";
+      newErrors.dueDate = "Due date is required";
     }
 
-    participants.forEach(
-      (participant, index) => {
-        if (!participant.name.trim()) {
-          newErrors[
-            `name-${index}`
-          ] = "Name is required";
-        }
-
-        if (!participant.email.trim()) {
-          newErrors[`email-${index}`] = "Email is required";
-        }
-
-        if (!participant.phone.trim()) {
-          newErrors[`phone-${index}`] = "Phone number is required";
-        }
+    participants.forEach((participant, index) => {
+      if (!participant.name.trim()) {
+        newErrors[`name-${index}`] = "Name is required";
       }
-    )
+
+      if (!participant.email.trim()) {
+        newErrors[`email-${index}`] = "Email is required";
+      }
+
+      if (!participant.phone.trim()) {
+        newErrors[`phone-${index}`] = "Phone number is required";
+      }
+    });
 
     setErrors(newErrors);
 
-    return (
-      Object.keys(newErrors).length === 0
-    );
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
@@ -181,34 +161,32 @@ export default function CreateBillPage() {
 
       console.log(bill);
       const paymentLink = `${window.location.origin}/pay/${bill.id}`;
+
+      setBillLink(paymentLink);
       // Save Participants
-      const participantData = participants.map(person => ({
+      const participantData = participants.map((person) => ({
         bill_id: bill.id,
         name: person.name,
-        email: person.email,
+        email: person.email.toLowerCase().trim(),
         phone: person.phone,
         amount:
-          splitType === "equal"
-            ? Number(amount) / participants.length
-            : null,
+          splitType === "equal" ? Number(amount) / participants.length : null,
+        payment_status: "pending",
       }));
 
       const { error: participantError } = await supabase
         .from("bill_participants")
         .insert(participantData);
       for (const person of participantData) {
-
         const amountToPay =
-          person.amount ??
-          Number(amount) / participantData.length;
+          person.amount ?? Number(amount) / participantData.length;
 
         await fetch("/api/send-bill-email", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-
             email: person.email,
 
             name: person.name,
@@ -218,8 +196,7 @@ export default function CreateBillPage() {
             amount: amountToPay,
 
             billLink: paymentLink,
-
-          })
+          }),
         });
 
         await fetch("/api/send-whatsapp", {
@@ -237,9 +214,7 @@ export default function CreateBillPage() {
                 ? Number(amount) / participants.length
                 : amount,
             link: `${window.location.origin}/pay/${bill.id}`,
-
           }),
-
         });
         console.log("Sending WhatsApp to:", person.name, person.phone);
       }
@@ -265,8 +240,6 @@ export default function CreateBillPage() {
 
       // const link = `${window.location.origin}/pay/${bill.id}`;
 
-
-
       setShowSuccessModal(true);
     } catch (err) {
       console.error(err);
@@ -274,9 +247,7 @@ export default function CreateBillPage() {
     }
   };
   const copyLink = async () => {
-    await navigator.clipboard.writeText(
-      billLink
-    );
+    await navigator.clipboard.writeText(billLink);
 
     setCopied(true);
 
@@ -296,16 +267,11 @@ export default function CreateBillPage() {
     }
   };
 
-  const completedFields = [
-    title,
-    description,
-    amount,
-    dueDate,
-  ].filter(Boolean).length;
+  const completedFields = [title, description, amount, dueDate].filter(
+    Boolean,
+  ).length;
 
-  const progress = Math.round(
-    (completedFields / 4) * 100
-  );
+  const progress = Math.round((completedFields / 4) * 100);
 
   return (
     <>
@@ -314,9 +280,7 @@ export default function CreateBillPage() {
       <div className="relative flex min-h-[calc(100vh-80px)] bg-slate-50">
         {isSidebarOpen && (
           <div
-            onClick={() =>
-              setIsSidebarOpen(false)
-            }
+            onClick={() => setIsSidebarOpen(false)}
             className="
               fixed inset-0 z-40
               bg-black/40
@@ -328,20 +292,14 @@ export default function CreateBillPage() {
 
         <Sidebar
           isOpen={isSidebarOpen}
-          onClose={() =>
-            setIsSidebarOpen(false)
-          }
+          onClose={() => setIsSidebarOpen(false)}
         />
 
         <main className="flex-1 overflow-x-hidden p-5 md:p-8 lg:p-10">
           {/* Header */}
           <div className="flex items-start gap-4">
             <button
-              onClick={() =>
-                setIsSidebarOpen(
-                  (prev) => !prev
-                )
-              }
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
               className="
                 rounded-xl
                 border
@@ -352,21 +310,14 @@ export default function CreateBillPage() {
                 lg:hidden
               "
             >
-              {isSidebarOpen ? (
-                <X size={22} />
-              ) : (
-                <Menu size={22} />
-              )}
+              {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
 
             <div className="flex-1">
-              <h1 className="text-3xl font-bold md:text-4xl">
-                Create Bill 💸
-              </h1>
+              <h1 className="text-3xl font-bold md:text-4xl">Create Bill 💸</h1>
 
               <p className="mt-2 text-slate-500">
-                Set up a bill and start
-                collecting contributions.
+                Set up a bill and start collecting contributions.
               </p>
 
               {/* Progress */}
@@ -397,9 +348,7 @@ export default function CreateBillPage() {
           <div className="mt-10 space-y-8">
             {/* Bill Information */}
             <section className="rounded-3xl bg-white p-6 shadow-sm md:p-8">
-              <h2 className="text-xl font-bold">
-                Bill Information
-              </h2>
+              <h2 className="text-xl font-bold">Bill Information</h2>
 
               <div className="mt-6 space-y-5">
                 <div>
@@ -407,17 +356,11 @@ export default function CreateBillPage() {
                     label="Bill Title"
                     placeholder="Birthday Dinner"
                     value={title}
-                    onChange={(e) =>
-                      setTitle(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setTitle(e.target.value)}
                   />
 
                   {errors.title && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.title}
-                    </p>
+                    <p className="mt-1 text-sm text-red-500">{errors.title}</p>
                   )}
                 </div>
 
@@ -426,18 +369,12 @@ export default function CreateBillPage() {
                     label="Description"
                     placeholder="Contributions for dinner"
                     value={description}
-                    onChange={(e) =>
-                      setDescription(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setDescription(e.target.value)}
                   />
 
                   {errors.description && (
                     <p className="mt-1 text-sm text-red-500">
-                      {
-                        errors.description
-                      }
+                      {errors.description}
                     </p>
                   )}
                 </div>
@@ -448,24 +385,16 @@ export default function CreateBillPage() {
                     type="number"
                     placeholder="30000"
                     value={amount}
-                    onChange={(e) =>
-                      setAmount(
-                        e.target.value
-                      )
-                    }
+                    onChange={(e) => setAmount(e.target.value)}
                   />
 
                   {errors.amount && (
-                    <p className="mt-1 text-sm text-red-500">
-                      {errors.amount}
-                    </p>
+                    <p className="mt-1 text-sm text-red-500">{errors.amount}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="mb-2 block font-medium">
-                    Due Date
-                  </label>
+                  <label className="mb-2 block font-medium">Due Date</label>
 
                   <div className="relative">
                     <Calendar
@@ -480,11 +409,7 @@ export default function CreateBillPage() {
                     <input
                       type="date"
                       value={dueDate}
-                      onChange={(e) =>
-                        setDueDate(
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => setDueDate(e.target.value)}
                       className="
                         w-full rounded-xl
                         border border-slate-300
@@ -506,45 +431,25 @@ export default function CreateBillPage() {
 
             {/* Contribution Type */}
             <section className="rounded-3xl bg-white p-6 shadow-sm md:p-8">
-              <h2 className="text-xl font-bold">
-                Contribution Type
-              </h2>
+              <h2 className="text-xl font-bold">Contribution Type</h2>
 
               <div className="mt-6 space-y-4">
                 <label className="flex items-center gap-3">
                   <input
                     type="radio"
-                    checked={
-                      splitType ===
-                      "equal"
-                    }
-                    onChange={() =>
-                      setSplitType(
-                        "equal"
-                      )
-                    }
+                    checked={splitType === "equal"}
+                    onChange={() => setSplitType("equal")}
                   />
-                  <span>
-                    Equal Split
-                  </span>
+                  <span>Equal Split</span>
                 </label>
 
                 <label className="flex items-center gap-3">
                   <input
                     type="radio"
-                    checked={
-                      splitType ===
-                      "custom"
-                    }
-                    onChange={() =>
-                      setSplitType(
-                        "custom"
-                      )
-                    }
+                    checked={splitType === "custom"}
+                    onChange={() => setSplitType("custom")}
                   />
-                  <span>
-                    Custom Split
-                  </span>
+                  <span>Custom Split</span>
                 </label>
               </div>
             </section>
@@ -552,162 +457,109 @@ export default function CreateBillPage() {
             {/* Participants */}
             <section className="rounded-3xl bg-white p-6 shadow-sm md:p-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">
-                  Participants
-                </h2>
+                <h2 className="text-xl font-bold">Participants</h2>
 
-                <Button
-                  type="button"
-                  onClick={
-                    addParticipant
-                  }
-                >
+                <Button type="button" onClick={addParticipant}>
                   <Plus size={18} />
                   Add
                 </Button>
               </div>
 
               <div className="mt-6 space-y-5">
-                {participants.map(
-                  (
-                    participant,
-                    index
-                  ) => (
-                    <div
-                      key={
-                        participant.id
+                {participants.map((participant, index) => (
+                  <div key={participant.id} className="space-y-4">
+                    <Input
+                      placeholder="Name"
+                      value={participant.name}
+                      onChange={(e) =>
+                        updateParticipant(
+                          participant.id,
+                          "name",
+                          e.target.value,
+                        )
                       }
-                      className="space-y-4"
-                    >
-                      <Input
-                        placeholder="Name"
-                        value={
-                          participant.name
-                        }
-                        onChange={(e) =>
-                          updateParticipant(
-                            participant.id,
-                            "name",
-                            e.target.value
-                          )
-                        }
-                      />
+                    />
 
-                      {errors[
-                        `name-${index}`
-                      ] && (
-                          <p className="text-sm text-red-500">
-                            {
-                              errors[
-                              `name-${index}`
-                              ]
-                            }
-                          </p>
-                        )}
+                    {errors[`name-${index}`] && (
+                      <p className="text-sm text-red-500">
+                        {errors[`name-${index}`]}
+                      </p>
+                    )}
 
-                      <Input
-                        placeholder="Email"
-                        value={
-                          participant.email
-                        }
-                        onChange={(e) =>
-                          updateParticipant(
-                            participant.id,
-                            "email",
-                            e.target.value
-                          )
-                        }
-                      />
+                    <Input
+                      placeholder="Email"
+                      value={participant.email}
+                      onChange={(e) =>
+                        updateParticipant(
+                          participant.id,
+                          "email",
+                          e.target.value,
+                        )
+                      }
+                    />
 
-                      {errors[
-                        `email-${index}`
-                      ] && (
-                          <p className="text-sm text-red-500">
-                            {
-                              errors[
-                              `email-${index}`
-                              ]
-                            }
-                          </p>
-                        )}
-                      <Input
-                        placeholder="Phone Number"
-                        value={participant.phone}
-                        onChange={(e) =>
-                          updateParticipant(
-                            participant.id,
-                            "phone",
-                            e.target.value
-                          )
-                        }
-                      />
+                    {errors[`email-${index}`] && (
+                      <p className="text-sm text-red-500">
+                        {errors[`email-${index}`]}
+                      </p>
+                    )}
+                    <Input
+                      placeholder="Phone Number"
+                      value={participant.phone}
+                      onChange={(e) =>
+                        updateParticipant(
+                          participant.id,
+                          "phone",
+                          e.target.value,
+                        )
+                      }
+                    />
 
-                      {errors[`phone-${index}`] && (
-                        <p className="text-sm text-red-500">
-                          {errors[`phone-${index}`]}
-                        </p>
-                      )}
-                    </div>
-                  )
-                )}
+                    {errors[`phone-${index}`] && (
+                      <p className="text-sm text-red-500">
+                        {errors[`phone-${index}`]}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
             </section>
 
             {/* Payment Methods */}
             <section className="rounded-3xl bg-white p-6 shadow-sm md:p-8">
-              <h2 className="text-xl font-bold">
-                Payment Methods
-              </h2>
+              <h2 className="text-xl font-bold">Payment Methods</h2>
 
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <label className="flex cursor-pointer items-center gap-4 rounded-2xl border p-6">
                   <input
                     type="checkbox"
-                    checked={
-                      paymentMethods.card
-                    }
+                    checked={paymentMethods.card}
                     onChange={() =>
-                      setPaymentMethods(
-                        (
-                          prev
-                        ) => ({
-                          ...prev,
-                          card:
-                            !prev.card,
-                        })
-                      )
+                      setPaymentMethods((prev) => ({
+                        ...prev,
+                        card: !prev.card,
+                      }))
                     }
                   />
 
                   <CreditCard />
-                  <span>
-                    Card Payments
-                  </span>
+                  <span>Card Payments</span>
                 </label>
 
                 <label className="flex cursor-pointer items-center gap-4 rounded-2xl border p-6">
                   <input
                     type="checkbox"
-                    checked={
-                      paymentMethods.bank
-                    }
+                    checked={paymentMethods.bank}
                     onChange={() =>
-                      setPaymentMethods(
-                        (
-                          prev
-                        ) => ({
-                          ...prev,
-                          bank:
-                            !prev.bank,
-                        })
-                      )
+                      setPaymentMethods((prev) => ({
+                        ...prev,
+                        bank: !prev.bank,
+                      }))
                     }
                   />
 
                   <Landmark />
-                  <span>
-                    Bank Transfer
-                  </span>
+                  <span>Bank Transfer</span>
                 </label>
               </div>
             </section>
@@ -715,148 +567,95 @@ export default function CreateBillPage() {
             {/* Actions */}
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-end">
               <Link href="/bills">
-                <Button variant="outline">
-                  Cancel
-                </Button>
+                <Button variant="outline">Cancel</Button>
               </Link>
 
-              <Button
-                onClick={
-                  handleSubmit
-                }
-              >
-                Create Bill
-              </Button>
+              <Button onClick={handleSubmit}>Create Bill</Button>
             </div>
           </div>
-          {
-            showSuccessModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5">
-                <div className="w-full max-w-xl rounded-3xl bg-white p-8 shadow-2xl">
-
-                  <div className="text-center">
-
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-
-                      <Check
-                        size={42}
-                        className="text-green-600"
-                      />
-
-                    </div>
-
-                    <h2 className="mt-6 text-3xl font-bold">
-                      Bill Created 🎉
-                    </h2>
-
-                    <p className="mt-3 text-slate-500">
-                      Your bill has been created successfully.
-                    </p>
-
+          {showSuccessModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5">
+              <div className="w-full max-w-xl rounded-3xl bg-white p-8 shadow-2xl">
+                <div className="text-center">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                    <Check size={42} className="text-green-600" />
                   </div>
 
-                  <div className="mt-8 space-y-4 rounded-2xl bg-slate-50 p-6">
+                  <h2 className="mt-6 text-3xl font-bold">Bill Created 🎉</h2>
 
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">
-                        Bill
-                      </span>
+                  <p className="mt-3 text-slate-500">
+                    Your bill has been created successfully.
+                  </p>
+                </div>
 
-                      <span className="font-semibold">
-                        {title}
-                      </span>
-                    </div>
+                <div className="mt-8 space-y-4 rounded-2xl bg-slate-50 p-6">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Bill</span>
 
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">
-                        Bill ID
-                      </span>
-
-                      <span className="font-semibold">
-                        {billId}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">
-                        Amount
-                      </span>
-
-                      <span className="font-semibold">
-                        ₦{amount}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">
-                        Participants
-                      </span>
-
-                      <span className="font-semibold">
-                        {participants.length}
-                      </span>
-                    </div>
-
+                    <span className="font-semibold">{title}</span>
                   </div>
 
-                  <div className="mt-8">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Bill ID</span>
 
-                    <label className="mb-2 block font-semibold">
-                      Share Link
-                    </label>
-
-                    <div className="flex overflow-hidden rounded-xl border">
-
-                      <input
-                        readOnly
-                        value={billLink}
-                        className="flex-1 px-4 py-3 outline-none"
-                      />
-
-                      <button
-                        onClick={copyLink}
-                        className="bg-blue-600 px-5 text-white hover:bg-blue-700"
-                      >
-                        {copied ? (
-                          <Check size={18} />
-                        ) : (
-                          <Copy size={18} />
-                        )}
-                      </button>
-
-                    </div>
-
+                    <span className="font-semibold">{billId}</span>
                   </div>
 
-                  <div className="mt-8 grid gap-3">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Amount</span>
 
-                    <Button
-                      onClick={shareLink}
+                    <span className="font-semibold">₦{amount}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Participants</span>
+
+                    <span className="font-semibold">{participants.length}</span>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <label className="mb-2 block font-semibold">Share Link</label>
+
+                  <div className="flex overflow-hidden rounded-xl border">
+                    <input
+                      readOnly
+                      value={billLink}
+                      className="flex-1 px-4 py-3 outline-none"
+                    />
+
+                    <button
+                      onClick={copyLink}
+                      className="bg-blue-600 px-5 text-white hover:bg-blue-700"
                     >
-                      <Share2 size={18} />
-                      Share Link
-                    </Button>
-
-                    <Link href={`/pay/${billId}`}>
-                      <Button variant="outline" className="w-full">
-                        <ExternalLink size={18} />
-                        View Bill
-                      </Button>
-                    </Link>
-
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowSuccessModal(false)}
-                    >
-                      Close
-                    </Button>
-
+                      {copied ? <Check size={18} /> : <Copy size={18} />}
+                    </button>
                   </div>
+                </div>
 
+                <div className="mt-8 grid gap-3">
+                  <Button onClick={shareLink}>
+                    <Share2 size={18} />
+                    Share Link
+                  </Button>
+
+                  <Link href={`/pay/${billId}`}>
+                    <Button variant="outline" className="w-full">
+                      <ExternalLink size={18} />
+                      View Bill
+                    </Button>
+                  </Link>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSuccessModal(false)}
+                  >
+                    Close
+                  </Button>
                 </div>
               </div>
-            )
-          }
+            </div>
+          )}
         </main>
       </div>
     </>

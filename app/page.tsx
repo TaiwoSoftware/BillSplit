@@ -55,7 +55,7 @@ export default function Home() {
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link href="/">
             <h1 className="text-2xl font-bold text-blue-600">
-              BillSplit 
+              BillSplit 💸
             </h1>
           </Link>
 
